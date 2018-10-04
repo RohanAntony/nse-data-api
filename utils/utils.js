@@ -14,19 +14,20 @@ let createDirIfNotExist = (dirname='tmp') => {
   return dirPath
 }
 
-let unzipFiles = (zipFile, rawFileName, cb) => {
+let unzipFiles = (zipFile, output, cb) => {
   // const outFile = path.join('tmp/data', rawFileName)
   // const inp = fs.createReadStream(zipFile);
   // const out = fs.createWriteStream(outFile);
   // inp.pipe(unzip).pipe(out);
-  let command = 'unzip ' + zipFile + ' -d ' + path.join(__dirname, 'tmp/data')
+  let command = 'unzip ' + zipFile + ' -d ' + output
   console.log(command)
   exec(command, function(err){
+    fs.unlinkSync(zipFile)
     if(err){
       console.log(err)
-      return;
+      cb(null)
     }
-    cb(zipFile)
+    cb(output)
   })
 }
 
@@ -54,19 +55,19 @@ let fetchFile = (url, writeFile, cb) => {
       console.log(data)
       file.write(data)
     })
-    response.on('finish', function(){
-    })
-    response.on('close', function(){
-      cb(writeFile)
+    response.on('end', function(){
+      cb()
     })
   })
 }
 
-let getDayMonthYear = (date) => {
+let getDayMonthYear = (dateVal) => {
+  let month = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+  let date = new Date(dateVal);
   return {
-    day:'01',
-    month: 'OCT',
-    year: '2018'
+    day: (date.getDate() < 10 ? '0' + date.getDate() : date.getDate()) + '',
+    month: month[date.getMonth()],
+    year: (date.getUTCFullYear()) + ''
   }
 }
 
@@ -75,7 +76,8 @@ let utils = {
     constructFileURL: constructFileURL,
     constructFilename: constructFilename,
     fetchFile: fetchFile,
-    unzipFiles: unzipFiles
+    unzipFiles: unzipFiles,
+    getDayMonthYear: getDayMonthYear
 }
 
 module.exports = utils
