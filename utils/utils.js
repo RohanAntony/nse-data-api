@@ -3,10 +3,11 @@ let path = require('path')
 let urljoin = require('url-join')
 let https = require('https')
 let exec = require('child_process').exec;
-let unzip = require('zlib').createUnzip()
+let csvconverter = require('csvtojson')
 
 let createDirIfNotExist = (dirname='tmp') => {
   let dirPath = path.join( __dirname, dirname)
+  console.log(this.name)
   if(!fs.existsSync(dirPath)){
     fs.mkdirSync(dirPath)
   }
@@ -15,10 +16,6 @@ let createDirIfNotExist = (dirname='tmp') => {
 }
 
 let unzipFiles = (zipFile, output, cb) => {
-  // const outFile = path.join('tmp/data', rawFileName)
-  // const inp = fs.createReadStream(zipFile);
-  // const out = fs.createWriteStream(outFile);
-  // inp.pipe(unzip).pipe(out);
   let command = 'unzip ' + zipFile + ' -d ' + output
   console.log(command)
   exec(command, function(err){
@@ -27,7 +24,7 @@ let unzipFiles = (zipFile, output, cb) => {
       console.log(err)
       cb(null)
     }
-    cb(output)
+    cb(path.join(output, ))
   })
 }
 
@@ -48,11 +45,10 @@ let constructFilename = (day, month, year, raw=false) => {
 }
 
 let fetchFile = (url, writeFile, cb) => {
-  console.log(url, writeFile)
   let file = fs.createWriteStream(writeFile);
   let request = https.get(url, function(response){
     response.on('data', function(data){
-      console.log(data)
+      // console.log(data)
       file.write(data)
     })
     response.on('end', function(){
@@ -71,13 +67,33 @@ let getDayMonthYear = (dateVal) => {
   }
 }
 
+let csvToJson = (csvPath, cb) => {
+  let jsonArray = []
+  fs.readdir(csvPath, function(err, files){
+    files.forEach(function(file, index){
+      let filePath = path.join(csvPath, file)
+      csvconverter().fromFile(filePath)
+        .then((jsonObj) => {
+          fs.unlinkSync(filePath)
+          jsonObj.forEach(function(json){
+            jsonArray.push(jsonObj)
+          })
+          if(index == files.length - 1){
+            cb(jsonArray) //run the callback after the last file has been parsed into json array
+          }
+        })
+    })
+  })
+}
+
 let utils = {
     createDirIfNotExist: createDirIfNotExist,
     constructFileURL: constructFileURL,
     constructFilename: constructFilename,
     fetchFile: fetchFile,
     unzipFiles: unzipFiles,
-    getDayMonthYear: getDayMonthYear
+    getDayMonthYear: getDayMonthYear,
+    csvToJson : csvToJson
 }
 
 module.exports = utils
