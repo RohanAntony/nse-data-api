@@ -1,14 +1,14 @@
 var utils = require('./utils.js')
-var db = require('./db.js')
+var db = require('../db/Stock/ops.js')
 var path = require('path')
+let logger = require('./logger.js')
 
 let saveDataInDb = (quotes, cb) => {
   quotes.forEach(function(quote){
     db.upsertDailyQuote(quote, function(status, message){
-      console.log(message)
+      logger.info(message)
     })
   })
-  console.log('Hello World')
   cb()
 }
 
