@@ -5,7 +5,6 @@ var fs = require('fs')
 
 var router = express.Router();
 
-/* GET home page. */
 router.get('/', function(req, res, next) {
   res.send('Index page')
 });
@@ -16,14 +15,23 @@ router.use('/:date', function(req, res, next){
 })
 
 router.get('/:date', function(req, res, next){
-  fileOps.getDataForDate(req.params.date, function(data){
-    let response = ''
-    if(data)
-      response = 'Extracted ' + data.length + ' for the date ' + req.params.date;
+  fileOps.getDataForDate(req.params.date, function(countSuccess, countFail){
+    let response = {}
+    if(countSuccess)
+      response = {
+        'Status': 'Success',
+        'Success': countSuccess,
+        'Failure': countFail,
+        'Date': req.params.date
+      }
     else {
-      response = 'Not a valid date'
+      response = {
+        'Status': 'Failure',
+        'Date': req.params.date,
+        'Msg': 'Not a valid date'
+      }
     }
-    res.json(data)
+    res.json(response)
   })
 })
 

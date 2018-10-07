@@ -20,23 +20,29 @@ const upsertDailyQuote = (DailyQuoteData, cb) => {
     (err, doc) => {
       if(err){
         logger.error(err)
-        cb(false, 'Error: ' + err)
+        cb(false)
       }else{
         logger.info('Added object with _id:' + doc['_id'] + ', version: ' + doc['__v'] + ' for symbol: ' + doc['SYMBOL'] + ' date: ' + doc['TIMESTAMP'])
-        cb(true, 'Added object with _id: ' + doc['_id'] + ' and version: ' + doc['__v'])
+        cb(true)
       }
     }
   )
 }
 
 const saveDataInDb = (quotes, cb) => {
-  quotes.forEach(function(quote){
-    upsertDailyQuote(quote, function(status, message){
-      return;
+  let success = 0;
+  let fail = 0;
+  quotes.forEach(function(quote, index){
+    upsertDailyQuote(quote, function(status){
+      if(status)
+        success = success + 1
+      else
+        fail = fail + 1
+      if(index == quotes.length - 1)
+        cb(success, fail)
     })
   })
   logger.info('Saved/ing (asyncronously)' + quotes.length + ' entries into DB')
-  cb()
 }
 
 module.exports = {

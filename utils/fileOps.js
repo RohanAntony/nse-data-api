@@ -55,24 +55,23 @@ let unzipFiles = (zipFile, output, cb) => {
 }
 
 let csvToJson = (csvPath, cb) => {
-  let jsonArray = []
+  let jsonData = []
   logger.info('Converting CSV to JSON for files in dir: ' + csvPath)
   fs.readdir(csvPath, function(err, files){
     files.forEach(function(file, index){
-      let filePath = path.join(csvPath, file)
-      logger.debug('Found file: ' + filePath)
-      csvconverter().fromFile(filePath)
-        .then((jsonObj) => {
-          jsonObj.forEach(function(json){
-            jsonArray.push(json)
-          })
-          if(index == files.length - 1){
-            logger.debug('Processed ' + files.length + ' CSV files')
-            cb(jsonArray) //run the callback after the last file has been parsed into json array
-          }
-          logger.info('Successfully converted CSV to JSON for file: ' + filePath)
-          fs.unlinkSync(filePath)
+      let csvFilePath = path.join(csvPath, file)
+      logger.debug('Found file: ' + csvFilePath)
+      csvconverter().fromFile(csvFilePath).then((jsonArray) => {
+        jsonArray.forEach(function(json){
+          jsonData.push(json)
         })
+        if(index == files.length - 1){
+          logger.debug('Processed ' + files.length + ' CSV files')
+          cb(jsonData) //run the callback after the last file has been parsed into json array
+        }
+        logger.info('Successfully converted CSV to JSON for file: ' + csvFilePath)
+        fs.unlinkSync(csvFilePath)
+      })
     })
   })
 }
@@ -90,8 +89,8 @@ function getDataForDate(d, cb){
         cb(null)
       }else{
         csvToJson(extractedFilePath, function(quotes){
-          db.saveDataInDb(quotes, () => {
-            cb(quotes)
+          db.saveDataInDb(quotes, (success, fail) => {
+            cb(success, fail)
           })
         })
       }
