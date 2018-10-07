@@ -74,13 +74,13 @@ let csvToJson = (csvPath, cb) => {
       let filePath = path.join(csvPath, file)
       csvconverter().fromFile(filePath)
         .then((jsonObj) => {
-          fs.unlinkSync(filePath)
           jsonObj.forEach(function(json){
-            jsonArray.push(jsonObj)
+            jsonArray.push(json)
           })
           if(index == files.length - 1){
             cb(jsonArray) //run the callback after the last file has been parsed into json array
           }
+          fs.unlinkSync(filePath)
         })
     })
   })
