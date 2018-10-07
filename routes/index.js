@@ -1,6 +1,5 @@
 var express = require('express');
-var utils = require('../utils/utils.js')
-var helper = require('../utils/helper.js')
+var fileOps = require('../utils/fileOps.js')
 var path = require('path')
 var fs = require('fs')
 
@@ -12,14 +11,12 @@ router.get('/', function(req, res, next) {
 });
 
 router.use('/:date', function(req, res, next){
-  utils.createDirIfNotExist('../tmp')
-  utils.createDirIfNotExist('../tmp/download')  //folder to store the temp .zip files downloaded
-  utils.createDirIfNotExist('../tmp/data')  //folder to store the extracted .csv files
+  fileOps.setupDirectories()
   next()
 })
 
 router.get('/:date', function(req, res, next){
-  helper.getDataForDate(req.params.date, function(data){
+  fileOps.getDataForDate(req.params.date, function(data){
     let response = ''
     if(data)
       response = 'Extracted ' + data.length + ' for the date ' + req.params.date;
