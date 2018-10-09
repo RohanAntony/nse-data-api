@@ -14,7 +14,7 @@ let createDirIfNotExist = (dirname='tmp') => {
     fs.mkdirSync(dirPath)
     logger.debug('Creating dir as it doesn\'t exist: ' + dirPath)
   }
-  logger.info('Checked directory if not exist: ' + dirPath)
+  logger.debug('Checked directory if not exist: ' + dirPath)
   return dirPath
 }
 
@@ -45,7 +45,7 @@ let unzipFiles = (zipFile, output, cb) => {
   exec(command, function(err){
     fs.unlinkSync(zipFile)
     logger.debug('Deleted zipFile: ' + zipFile)
-    if(err){
+    if(err){createDirIfNotExist
       logger.error(err)
       cb(null)
     }
@@ -78,9 +78,9 @@ let csvToJson = (csvPath, cb) => {
 
 function getDataForDate(d, cb){
   logger.info('Fetching data for Date: ' + d)
-  let date = nseDetails.getDayMonthYear(d)
+  date = d.split('-');
   let url = nseDetails.constructFileURL(date.day, date.month, date.year);
-  let filename = nseDetails.constructFilename(date.day, date.month, date.year);
+  let filename = nseDetails.constructZipFileName(date.day, date.month, date.year);
   let zipFilePath = path.join(__dirname,'../tmp/download/', filename)
   let extractedFilePath = path.join(__dirname, '../tmp/data')
   fetchFile(url, zipFilePath, function(){
@@ -101,7 +101,12 @@ function getDataForDate(d, cb){
 
 let utils = {
   setupDirectories: setupDirectories,
-  getDataForDate: getDataForDate
+  getDataForDate: getDataForDate,
+  _createDirIfNotExist: createDirIfNotExist,
+  _setupDirectories: setupDirectories,
+  _fetchFile: fetchFile,
+  _unzipFiles: unzipFiles,
+  _csvToJson: csvToJson
 }
 
 module.exports = utils

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "mocha"
   },
   "dependencies": {
     "cookie-parser": "~1.4.3",
@@ -17,5 +18,8 @@
     "stack-trace": "0.0.10",
     "url-join": "^4.0.0",
     "winston": "^3.1.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
   }
 }
