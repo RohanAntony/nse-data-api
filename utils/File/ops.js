@@ -3,43 +3,44 @@ let path = require('path')
 let https = require('https')
 let exec = require('child_process').exec;
 let csvconverter = require('csvtojson')
-let logger = require('./logger.js')
-let nseDetails = require('./nseDetails')
-let db = require('../db/Stock/ops.js')
+let logger = require('../logger.js')
+let nseDetails = require('../nseDetails')
+let db = require('../../db/Stock/ops.js')
+let Setup = require('./setup.js')
 
-let createDirIfNotExist = (dirname='tmp') => {
-  let dirPath = path.join( __dirname, dirname)
-  logger.debug('DirPath: ' + dirPath)
-  if(!fs.existsSync(dirPath)){
-    fs.mkdirSync(dirPath)
-    logger.debug('Creating dir as it doesn\'t exist: ' + dirPath)
+let rootDir = Setup.rootDir
+let sourceDir = Setup.sourceDir
+let destinationDir = Setup.destinationDir
+let setupDirectories = Setup.setupDirectories
+
+let createWriteFile = (options) => {
+  let url = options.url,
+      writeFilePath = options.writeFilePath,
+      writeFileName = options.writeFile
+  if(!url || !writeFilePath || !writeFileName){
+    logger.debug('Missing required options in functions fetchFile:')
+    return false;
   }
-  logger.debug('Checked directory if not exist: ' + dirPath)
-  return dirPath
+  let writeFile = path.join(writeFilePath, writeFileName);
+  let fileStream = fs.createWriteStream(writeFile);
+  logger.debug('Write file created for extracting Zip: ' + writeFile)
 }
 
-let setupDirectories = () => {
-  createDirIfNotExist('../tmp')
-  createDirIfNotExist('../tmp/download')  //folder to store the temp .zip files downloaded
-  createDirIfNotExist('../tmp/data')  //folder to store the extracted .csv files
-}
-
-let fetchFile = (url, writeFile, cb) => {
-  let file = fs.createWriteStream(writeFile);
-  logger.debug('Write File after extracting Zip: ' + writeFile)
+let fetchFile = (options, cb) => {
+  createWriteFile(options)
   let request = https.get(url, function(response){
     response.on('data', function(data){
       logger.debug('Fetched data from url: ' + url)
       file.write(data)
     })
     response.on('end', function(){
-      logger.info('Fetching data completed from url: ' + url)
-      cb()
+      logger.debug('Fetching data completed from url: ' + url)
+      cb(writeFile)
     })
   })
 }
 
-let unzipFiles = (zipFile, output, cb) => {
+let unzipFile = (zipFile, output, cb) => {
   let command = 'unzip ' + zipFile + ' -d ' + output
   logger.debug('Unzip command: ' + command)
   exec(command, function(err){
@@ -49,14 +50,14 @@ let unzipFiles = (zipFile, output, cb) => {
       logger.error(err)
       cb(null)
     }
-    logger.info('Unzipping complete for file: ' + zipFile)
+    logger.debug('Unzipping complete for file: ' + zipFile)
     cb(output)
   })
 }
 
 let csvToJson = (csvPath, cb) => {
   let jsonData = []
-  logger.info('Converting CSV to JSON for files in dir: ' + csvPath)
+  logger.debug('Converting CSV to JSON for files in dir: ' + csvPath)
   fs.readdir(csvPath, function(err, files){
     files.forEach(function(file, index){
       let csvFilePath = path.join(csvPath, file)
@@ -69,7 +70,7 @@ let csvToJson = (csvPath, cb) => {
           logger.debug('Processed ' + files.length + ' CSV files')
           cb(jsonData) //run the callback after the last file has been parsed into json array
         }
-        logger.info('Successfully converted CSV to JSON for file: ' + csvFilePath)
+        logger.debug('Successfully converted CSV to JSON for file: ' + csvFilePath)
         fs.unlinkSync(csvFilePath)
       })
     })
@@ -77,14 +78,14 @@ let csvToJson = (csvPath, cb) => {
 }
 
 function getDataForDate(d, cb){
-  logger.info('Fetching data for Date: ' + d)
+  logger.debug('Fetching data for Date: ' + d)
   date = d.split('-');
   let url = nseDetails.constructFileURL(date.day, date.month, date.year);
   let filename = nseDetails.constructZipFileName(date.day, date.month, date.year);
   let zipFilePath = path.join(__dirname,'../tmp/download/', filename)
   let extractedFilePath = path.join(__dirname, '../tmp/data')
   fetchFile(url, zipFilePath, function(){
-    unzipFiles(zipFilePath, extractedFilePath, function(file){
+    unzipFile(zipFilePath, extractedFilePath, function(file){
       if(!file){
         cb(null)
       }else{
@@ -102,11 +103,11 @@ function getDataForDate(d, cb){
 let utils = {
   setupDirectories: setupDirectories,
   getDataForDate: getDataForDate,
-  _createDirIfNotExist: createDirIfNotExist,
-  _setupDirectories: setupDirectories,
-  _fetchFile: fetchFile,
-  _unzipFiles: unzipFiles,
-  _csvToJson: csvToJson
+  test: {
+    fetchFile: fetchFile,
+    unzipFile: unzipFile,
+    csvToJson: csvToJson
+  }
 }
 
 module.exports = utils
